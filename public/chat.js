@@ -5,7 +5,30 @@ let isStreaming = false;
 const chatWindow = document.getElementById("chatWindow");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
-const welcome = document.getElementById("welcome");
+
+// ── Reset / New Chat ──────────────────────────────────────────────────────────
+function resetChat() {
+  history = [];
+  chatWindow.innerHTML = '';
+  const welcome = document.createElement("div");
+  welcome.id = "welcome";
+  welcome.className = "welcome";
+  welcome.innerHTML = `
+    <div class="welcome-icon">🎓</div>
+    <h2>Course Assistant</h2>
+    <p class="welcome-desc">Ask any question about the <strong>Introduction to GenAI Concepts</strong> course. Select one of the starter questions below or type your own inquiry about GenAI topics.</p>
+    <div class="suggestions">
+      <button class="suggestion" onclick="sendSuggestion(this)">What topics are covered in this course?</button>
+      <button class="suggestion" onclick="sendSuggestion(this)">How do I build an AI agent with n8n?</button>
+      <button class="suggestion" onclick="sendSuggestion(this)">What is a reasoning model?</button>
+    </div>
+    <p class="welcome-hint">💡 You can also ask about context engineering, agentic workflows, RAG, MCP, and more.</p>
+  `;
+  chatWindow.appendChild(welcome);
+  messageInput.value = "";
+  messageInput.style.height = "auto";
+  messageInput.focus();
+}
 
 // ── Send a suggestion chip ────────────────────────────────────────────────────
 function sendSuggestion(btn) {
@@ -29,6 +52,7 @@ function handleKeydown(e) {
 
 // ── Append a message bubble to the chat window ────────────────────────────────
 function appendMessage(role, text) {
+  const welcome = document.getElementById("welcome");
   if (welcome) welcome.style.display = "none";
 
   const wrap = document.createElement("div");
@@ -51,6 +75,7 @@ function appendMessage(role, text) {
 
 // ── Append a typing/status indicator ─────────────────────────────────────────
 function appendTyping() {
+  const welcome = document.getElementById("welcome");
   if (welcome) welcome.style.display = "none";
 
   const wrap = document.createElement("div");
@@ -100,10 +125,7 @@ async function sendMessage() {
   messageInput.value = "";
   messageInput.style.height = "auto";
 
-  // Show user message
   appendMessage("user", text);
-
-  // Show typing indicator
   const { wrap: typingWrap, status: statusEl } = appendTyping();
 
   let aiBubble = null;
@@ -128,19 +150,16 @@ async function sendMessage() {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
-      buffer = lines.pop(); // keep incomplete line
+      buffer = lines.pop();
 
       for (const line of lines) {
         if (!line.trim()) continue;
-
-        // Parse SSE format: "event: X\ndata: Y"
-        if (line.startsWith("event:")) continue; // handled with data
+        if (line.startsWith("event:")) continue;
 
         if (line.startsWith("data:")) {
           const raw = line.slice(5).trim();
           let eventType = "chunk";
 
-          // Look back for the event type
           const eventLine = lines[lines.indexOf(line) - 1];
           if (eventLine && eventLine.startsWith("event:")) {
             eventType = eventLine.slice(6).trim();
@@ -152,7 +171,6 @@ async function sendMessage() {
             if (eventType === "status") {
               statusEl.textContent = payload;
             } else if (eventType === "chunk") {
-              // First chunk: replace typing indicator with real bubble
               if (!aiBubble) {
                 removeTyping();
                 const wrap = document.createElement("div");
@@ -191,11 +209,9 @@ async function sendMessage() {
       }
     }
 
-    // Save to history for multi-turn context
     if (fullResponse) {
       history.push({ role: "user", content: text });
       history.push({ role: "assistant", content: fullResponse });
-      // Keep last 10 turns to avoid context bloat
       if (history.length > 20) history = history.slice(-20);
     }
 

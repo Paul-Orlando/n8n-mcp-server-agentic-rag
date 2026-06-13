@@ -306,3 +306,30 @@ body {
   border-radius: 12px;
   font-size: 14px;
 }
+
+/* Header right group */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* New Chat button */
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.new-chat-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
