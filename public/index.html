@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Transcription Search</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text">Course AI</span>
+        </div>
+        <div class="header-meta">Powered by Gemini Flash 2.5 · Pinecone</div>
+      </div>
+    </header>
+
+    <main class="chat-window" id="chatWindow">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🎓</div>
+        <h2>Ask anything about the course</h2>
+        <p>I'll search through all 35 transcripts to find the most relevant answers for you.</p>
+        <div class="suggestions">
+          <button class="suggestion" onclick="sendSuggestion(this)">What topics are covered in this course?</button>
+          <button class="suggestion" onclick="sendSuggestion(this)">How do I build an AI agent with n8n?</button>
+          <button class="suggestion" onclick="sendSuggestion(this)">What is the MCP protocol?</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="input-area">
+      <div class="input-inner">
+        <textarea
+          id="messageInput"
+          class="message-input"
+          placeholder="Ask a question about the course..."
+          rows="1"
+          onkeydown="handleKeydown(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="chat.js"></script>
+</body>
+</html>
