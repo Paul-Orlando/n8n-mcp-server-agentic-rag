@@ -47,7 +47,7 @@ async function embedQuery(text: string): Promise<number[]> {
 // ── Search Pinecone for relevant transcript chunks ───────────────────────────
 async function searchTranscripts(query: string, topK = 5): Promise<string> {
   const vector = await embedQuery(query);
-  const index = pinecone.index(PINECONE_INDEX).namespace("mcp-research");
+  const index = pinecone.index(PINECONE_INDEX).namespace("arxiv-papers");
 
   const results = await index.query({
     vector,
