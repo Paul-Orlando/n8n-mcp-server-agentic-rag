@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-import { Pinecone } from "@pinecone-database/pinecone";
 
 dotenv.config();
 
@@ -13,61 +12,43 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 const PORT = process.env.PORT || 3000;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const PINECONE_API_KEY = process.env.PINECONE_API_KEY || "";
-const PINECONE_INDEX = process.env.PINECONE_INDEX || "mcp-server-v1";
+const MCP_SERVER_URL = process.env.MCP_SERVER_URL || "https://pinecone-mcp-server-production-189c.up.railway.app/mcp";
 
-// ── Pinecone client ──────────────────────────────────────────────────────────
-const pinecone = new Pinecone({ apiKey: PINECONE_API_KEY });
-
-// ── Embed a query using OpenRouter's embedding endpoint ──────────────────────
-// OpenRouter proxies OpenAI-compatible embeddings via text-embedding-3-small
-// which produces 1536-dim vectors matching your Pinecone index.
-async function embedQuery(text: string): Promise<number[]> {
-  const res = await fetch("https://openrouter.ai/api/v1/embeddings", {
+// ── Call agentic-search tool via MCP server ───────────────────────────────────
+async function searchViaMCP(query: string, topK = 5): Promise<string> {
+  const res = await fetch(MCP_SERVER_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
     },
     body: JSON.stringify({
-      model: "openai/text-embedding-3-small",
-      input: text,
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "agentic-search",
+        arguments: { query, topK },
+      },
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Embedding failed: ${res.status} ${err}`);
+    throw new Error(`MCP search failed: ${res.status} ${err}`);
   }
 
-  const data = (await res.json()) as { data: { embedding: number[] }[] };
-  return data.data[0].embedding;
-}
+  const text = await res.text();
+  const dataLine = text.split("\n").find((l) => l.startsWith("data:"));
+  if (!dataLine) throw new Error("No data in MCP response");
 
-// ── Search Pinecone for relevant transcript chunks ───────────────────────────
-async function searchTranscripts(query: string, topK = 5): Promise<string> {
-  const vector = await embedQuery(query);
-  const index = pinecone.index(PINECONE_INDEX).namespace("arxiv-papers");
+  const parsed = JSON.parse(dataLine.slice(5).trim());
 
-  const results = await index.query({
-    vector,
-    topK,
-    includeMetadata: true,
-
-  });
-
-  if (!results.matches || results.matches.length === 0) {
-    return "No relevant transcript content found.";
+  if (parsed.error) {
+    throw new Error(`MCP error: ${parsed.error.message}`);
   }
 
-  // Concatenate the top matching chunks into a context block
-  return results.matches
-    .map((m, i) => {
-      const text = (m.metadata?.text as string) || (m.metadata?.content as string) || "";
-      const source = (m.metadata?.source as string) || (m.metadata?.filename as string) || "transcript";
-      return `[${i + 1}] Source: ${source}\n${text}`;
-    })
-    .join("\n\n---\n\n");
+  return parsed.result?.content?.[0]?.text || "No results found.";
 }
 
 // ── POST /chat — main endpoint ───────────────────────────────────────────────
@@ -82,7 +63,6 @@ app.post("/chat", async (req: Request, res: Response) => {
     return;
   }
 
-  // Set up SSE headers for streaming
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -93,17 +73,17 @@ app.post("/chat", async (req: Request, res: Response) => {
   };
 
   try {
-    // 1. Search Pinecone for relevant context
-    send("status", "Searching course transcripts...");
-    const context = await searchTranscripts(message);
+    // 1. Search via MCP server
+    send("status", "Searching knowledge base via MCP...");
+    const context = await searchViaMCP(message);
 
-    // 2. Build messages array with context injected as system context
-    const systemPrompt = `You are a helpful assistant for an AI/automation course. 
-You have access to course transcript content retrieved from a knowledge base.
-Use the following transcript excerpts to answer the user's question accurately.
-If the transcripts don't contain relevant information, say so honestly.
+    // 2. Build system prompt with context
+    const systemPrompt = `You are a helpful GenAI research assistant covering AI Agents, RAG, MCP, and Prompt Engineering.
+You have access to content retrieved from a knowledge base of ArXiv research papers via an MCP server.
+Use the following excerpts to answer the user's question accurately.
+If the content does not contain relevant information, say so honestly.
 
-TRANSCRIPT CONTEXT:
+KNOWLEDGE BASE CONTEXT:
 ${context}`;
 
     const messages = [
@@ -120,7 +100,7 @@ ${context}`;
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "MCP Transcription Chat",
+        "X-Title": "GenAI Concepts Chat",
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
@@ -137,7 +117,6 @@ ${context}`;
       throw new Error(`OpenRouter error: ${openRouterRes.status} ${err}`);
     }
 
-    // 4. Stream chunks back to the frontend
     const reader = openRouterRes.body?.getReader();
     const decoder = new TextDecoder();
 
@@ -175,11 +154,15 @@ ${context}`;
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", model: "google/gemini-2.5-flash", index: PINECONE_INDEX });
+  res.json({
+    status: "ok",
+    model: "google/gemini-2.5-flash",
+    mcp_server: MCP_SERVER_URL,
+  });
 });
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running at http://localhost:${PORT}`);
-  console.log(`📚 Pinecone index: ${PINECONE_INDEX}`);
-  console.log(`🤖 Model: model: "google/gemini-2.5-flash", via OpenRouter\n`);
+  console.log(`🔌 MCP Server: ${MCP_SERVER_URL}`);
+  console.log(`🤖 Model: google/gemini-2.5-flash via OpenRouter\n`);
 });
