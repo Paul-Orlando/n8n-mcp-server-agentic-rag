@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction to GenAI Concepts</title>
+  <title>GenAI Concepts: Agents, RAG, MCP & Prompt Engineering</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="header-inner">
         <div class="logo">
           <span class="logo-icon">⚡</span>
-          <span class="logo-text">Introduction to GenAI Concepts</span>
+          <span class="logo-text">GenAI Concepts: Agents, RAG, MCP & Prompt Engineering</span>
         </div>
         <div class="header-right">
           <button class="new-chat-btn" onclick="resetChat()">
@@ -29,14 +29,20 @@
     <main class="chat-window" id="chatWindow">
       <div class="welcome" id="welcome">
         <div class="welcome-icon">🎓</div>
-        <h2>Course Assistant</h2>
-        <p class="welcome-desc">Ask any question about the <strong>Introduction to GenAI Concepts</strong> course. Select one of the starter questions below or type your own inquiry about GenAI topics.</p>
-        <div class="suggestions">
-          <button class="suggestion" onclick="sendSuggestion(this)">What topics are covered in this course?</button>
-          <button class="suggestion" onclick="sendSuggestion(this)">How do I build an AI agent with n8n?</button>
-          <button class="suggestion" onclick="sendSuggestion(this)">What is a reasoning model?</button>
+        <h2>GenAI Research Assistant</h2>
+        <p class="welcome-desc">Welcome! This assistant covers four core GenAI topics drawn from ArXiv research papers. Focus your questions on the topics below for the best results.</p>
+        <div class="topic-pills">
+          <span class="pill">🤖 AI Agents</span>
+          <span class="pill">📚 RAG</span>
+          <span class="pill">🔌 MCP</span>
+          <span class="pill">✍️ Prompt Engineering</span>
         </div>
-        <p class="welcome-hint">💡 You can also ask about context engineering, agentic workflows, RAG, MCP, and more.</p>
+        <div class="suggestions">
+          <button class="suggestion" onclick="sendSuggestion(this)">What are the key components of a RAG system?</button>
+          <button class="suggestion" onclick="sendSuggestion(this)">How do AI agents use tools to complete tasks?</button>
+          <button class="suggestion" onclick="sendSuggestion(this)">What is the Model Context Protocol (MCP)?</button>
+        </div>
+        <p class="welcome-hint">💡 For best results, ask about AI Agents, RAG, MCP, or Prompt Engineering.</p>
       </div>
     </main>
 
@@ -45,7 +51,7 @@
         <textarea
           id="messageInput"
           class="message-input"
-          placeholder="Ask a question about GenAI concepts..."
+          placeholder="Ask about AI Agents, RAG, MCP, or Prompt Engineering..."
           rows="1"
           onkeydown="handleKeydown(event)"
           oninput="autoResize(this)"
@@ -58,7 +64,7 @@
         </button>
       </div>
       <div class="input-footer">
-        Searches across 35 course transcripts · <a href="https://github.com/Paul-Orlando/n8n-mcp-server-agentic-rag" target="_blank">View on GitHub</a>
+        Searches 4,128 ArXiv research papers · <a href="https://github.com/Paul-Orlando/n8n-mcp-server-agentic-rag" target="_blank">View on GitHub</a>
       </div>
     </footer>
   </div>

@@ -333,3 +333,22 @@ body {
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* Topic pills */
+.topic-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+
+.pill {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
