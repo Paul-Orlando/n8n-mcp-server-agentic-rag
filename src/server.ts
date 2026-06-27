@@ -13,6 +13,7 @@ app.use(express.static(path.join(__dirname, "../public")));
 const PORT = process.env.PORT || 3000;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || "https://pinecone-mcp-server-production-189c.up.railway.app/mcp";
+const MCP_API_KEY = process.env.MCP_API_KEY || "";
 
 // ── Call agentic-search tool via MCP server ───────────────────────────────────
 async function searchViaMCP(query: string, topK = 5): Promise<string> {
@@ -21,6 +22,7 @@ async function searchViaMCP(query: string, topK = 5): Promise<string> {
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json, text/event-stream",
+      "X-API-Key": MCP_API_KEY,
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
